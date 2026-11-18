@@ -1,0 +1,208 @@
+# 1. Import Libraries
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.linear_model import LogisticRegression
+
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix,
+    ConfusionMatrixDisplay
+)
+
+
+# 2. Load Dataset
+
+df = pd.read_csv(r"C:\Users\j\Desktop\Machine_Learning\wdbc.csv")
+
+print(df.head())
+
+print("Shape:", df.shape)
+
+print(df.isnull().sum())
+
+
+# 3. Remove Unnecessary Columns
+
+df = df.drop(columns=['id'], errors='ignore')
+
+df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+
+
+# 4. Handle Missing Values
+
+df = df.dropna()
+
+
+# 5. Separate X and y
+
+X = df.drop('diagnosis', axis=1)
+
+y = df['diagnosis'].map({'B': 0, 'M': 1})
+
+
+# 6. Train Test Split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+
+# 7. Feature Scaling
+
+scaler = StandardScaler()
+
+X_train_scaled = scaler.fit_transform(X_train)
+
+X_test_scaled = scaler.transform(X_test)
+
+
+# 8. Logistic Regression Without PCA
+
+lr = LogisticRegression(max_iter=5000)
+
+lr.fit(X_train_scaled, y_train)
+
+y_pred = lr.predict(X_test_scaled)
+
+
+print("\n----- Without PCA -----")
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+
+print("Precision:", precision_score(y_test, y_pred))
+
+print("Recall:", recall_score(y_test, y_pred))
+
+print("F1 Score:", f1_score(y_test, y_pred))
+
+
+# 9. Apply PCA
+
+pca = PCA(n_components=0.95)
+
+X_train_pca = pca.fit_transform(X_train_scaled)
+
+X_test_pca = pca.transform(X_test_scaled)
+
+print("\n----- PCA Information -----")
+
+print("Original Dimensions:", X_train_scaled.shape[1])
+
+print("Reduced Dimensions:", X_train_pca.shape[1])
+
+print("Explained Variance:",
+      sum(pca.explained_variance_ratio_))
+
+
+# 10. Logistic Regression With PCA
+
+lr_pca = LogisticRegression(max_iter=5000)
+
+lr_pca.fit(X_train_pca, y_train)
+
+y_pred_pca = lr_pca.predict(X_test_pca)
+
+
+print("\n----- With PCA -----")
+
+print("Accuracy:", accuracy_score(y_test, y_pred_pca))
+
+print("Precision:", precision_score(y_test, y_pred_pca))
+
+print("Recall:", recall_score(y_test, y_pred_pca))
+
+print("F1 Score:", f1_score(y_test, y_pred_pca))
+
+
+# 11. Confusion Matrix
+
+cm = confusion_matrix(y_test, y_pred_pca)
+
+disp = ConfusionMatrixDisplay(
+    confusion_matrix=cm,
+    display_labels=['Benign', 'Malignant']
+)
+
+disp.plot(cmap='Blues')
+
+plt.title("Confusion Matrix After PCA")
+
+plt.show()
+
+
+# 12. Explained Variance Graph
+
+plt.figure(figsize=(8, 5))
+
+plt.plot(
+    np.cumsum(pca.explained_variance_ratio_),
+    marker='o'
+)
+
+plt.xlabel("Number of Components")
+
+plt.ylabel("Cumulative Explained Variance")
+
+plt.title("PCA Explained Variance")
+
+plt.grid()
+
+plt.show()
+
+
+# 13. Compare Both Models
+
+results = pd.DataFrame({
+
+    'Model': ['Without PCA', 'With PCA'],
+
+    'Accuracy': [
+        accuracy_score(y_test, y_pred),
+        accuracy_score(y_test, y_pred_pca)
+    ],
+
+    'Precision': [
+        precision_score(y_test, y_pred),
+        precision_score(y_test, y_pred_pca)
+    ],
+
+    'Recall': [
+        recall_score(y_test, y_pred),
+        recall_score(y_test, y_pred_pca)
+    ],
+
+    'F1 Score': [
+        f1_score(y_test, y_pred),
+        f1_score(y_test, y_pred_pca)
+    ]
+
+})
+
+print("\n----- Model Comparison -----")
+
+print(results)
+
+
+# 14. Visualization
+
+results.set_index('Model').plot(
+    kind='bar',
+    figsize=(9, 5)
+)
+
+plt.title("Classification Performance Before and After PCA")
+
+plt.ylabel("Score")
+
+plt.xticks(rotation=0)
+
+plt.show()
