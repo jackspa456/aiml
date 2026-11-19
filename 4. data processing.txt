@@ -1,0 +1,121 @@
+# Import Required Libraries
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+
+# 1. Load Dataset
+
+df = pd.read_csv(r"C:\Users\sauaw\Desktop\AIML\heart.csv")
+
+print("First Five Rows:")
+print(df.head())
+
+print("\nDataset Information:")
+print(df.info())
+
+# 2. Data Cleaning
+
+print("\nShape of Dataset:")
+print(df.shape)
+
+print("\nDuplicate Values:")
+print(df.duplicated().sum())
+
+# Remove Duplicate Rows
+df = df.drop_duplicates()
+
+print("\nShape After Removing Duplicates:")
+print(df.shape)
+
+# 3. Missing Value Handling
+
+print("\nMissing Values Before Handling:")
+print(df.isnull().sum())
+
+# Fill Numerical Missing Values with Mean
+for col in df.select_dtypes(include=np.number).columns:
+    df[col] = df[col].fillna(df[col].mean())
+
+# Fill Categorical Missing Values with Mode
+for col in df.select_dtypes(include='object').columns:
+    df[col] = df[col].fillna(df[col].mode()[0])
+
+print("\nMissing Values After Handling:")
+print(df.isnull().sum())
+
+# 4. Encoding Techniques
+
+# Convert Categorical Columns into Numerical Values
+le = LabelEncoder()
+
+for col in df.select_dtypes(include='object').columns:
+    df[col] = le.fit_transform(df[col])
+
+print("\nDataset After Encoding:")
+print(df.head())
+
+# 5. Statistical Analysis
+
+print("\nStatistical Analysis:")
+print(df.describe())
+
+print("\nMean:")
+print(df.mean())
+
+print("\nMedian:")
+print(df.median())
+
+print("\nStandard Deviation:")
+print(df.std())
+
+# 6. Data Visualization
+
+# Histograms
+df.hist(figsize=(12, 10), bins=20)
+plt.suptitle("Histograms of Heart Disease Dataset")
+plt.tight_layout()
+plt.show()
+
+# Boxplots
+plt.figure(figsize=(12, 6))
+sns.boxplot(data=df)
+plt.title("Boxplot of Heart Disease Dataset")
+plt.xticks(rotation=45)
+plt.show()
+
+# 7. Feature Scaling
+
+# Separate Features and Target
+X = df.drop('target', axis=1)
+y = df['target']
+
+# Apply Standard Scaling
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+X_scaled = pd.DataFrame(X_scaled, columns=X.columns)
+
+print("\nScaled Features:")
+print(X_scaled.head())
+
+# 8. Split Dataset into Training and Testing Sets
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_scaled, y,
+    test_size=0.2,
+    random_state=42
+)
+
+print("\nTraining and Testing Data:")
+
+print("X_train:", X_train.shape)
+print("X_test:", X_test.shape)
+print("y_train:", y_train.shape)
+print("y_test:", y_test.shape)
+
+print("\nDataset Preprocessing Completed Successfully!")
